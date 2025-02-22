@@ -35,6 +35,7 @@ async function downloadAndFilterJSONs() {
         const vodCategoriesUrl = `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_vod_categories`;
         const seriesCategoriesUrl = `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_series_categories`;
 
+
         // Fazendo as requisições
         const [liveResponse, vodResponse, seriesResponse, liveCategoriesResponse, vodCategoriesResponse, seriesCategoriesResponse] = await Promise.all([
             fetch(liveUrl),
@@ -44,8 +45,6 @@ async function downloadAndFilterJSONs() {
             fetch(vodCategoriesUrl),
             fetch(seriesCategoriesUrl)
         ]);
-
-        console.log(liveResponse);
 
         // Verifica se as respostas são bem-sucedidas
         if (liveResponse.ok && vodResponse.ok && seriesResponse.ok && liveCategoriesResponse.ok && vodCategoriesResponse.ok && seriesCategoriesResponse.ok) {
@@ -57,7 +56,6 @@ async function downloadAndFilterJSONs() {
             const seriesCategories = await seriesCategoriesResponse.json();
 
             // Filtrando os dados para remover conteúdo adulto
-            console.log(liveData);
             const filteredLiveData = filterAdultContent(liveData);
             const filteredVODData = filterAdultContent(vodData);
             const filteredSeriesData = filterAdultContent(seriesData);
