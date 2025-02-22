@@ -5,7 +5,7 @@ const axios = require("axios");
 require('dotenv').config();
 
 const app = express();
-const port = 8080;
+const port = 80;
 const IPTVurl = process.env.IPTV_URL;
 const IPTVuser = process.env.IPTV_USER;
 const IPTVpass = process.env.IPTV_PASS;
@@ -77,6 +77,7 @@ app.get("/player_api.php", async (req, res) => {
 
   if (endpoints[action]) {
     const data = await fetchFromIPTV(endpoints[action]);
+    console.log(data);
     return res.json(data);
   }
 
