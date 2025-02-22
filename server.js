@@ -1,8 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 const port = 8080;
@@ -20,23 +19,13 @@ const loadJson = (filename) => {
 };
 
 const loadJsonRemote = async () => {
+  // Exemplo para carregar informações remotamente (se necessário)
   try {
     const response = await axios.get(userInfoUrl);
     return response.data;
   } catch (error) {
     console.error(`Erro ao acessar o arquivo user_info.json:`, error.message);
     throw new Error("Não foi possível carregar as informações do usuário.");
-  }
-};
-
-// Função para carregar dados do servidor IPTV
-const fetchFromIPTV = async (endpoint) => {
-  try {
-    const response = await axios.get(endpoint);
-    return response.data;
-  } catch (error) {
-    console.error(`Erro ao acessar o servidor (${endpoint}):`, error.message);
-    return { error: "Erro ao acessar as informações do servidor." };
   }
 };
 
@@ -56,57 +45,63 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Endpoint principal
+// Endpoint principal – redireciona para o outro site para determinadas ações
 app.get("/player_api.php", async (req, res) => {
-  const { action, vod_id, series_id, stream_id } = req.query;
+  const { action, vod_id, series_id } = req.query;
 
   if (!action) {
     return res.json(loadJson("user_info.json"));
   }
 
-  const endpoints = {
-    //get_live_categories: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_live_categories`,
-    //get_live_streams: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_live_streams`,
-    //get_vod_categories: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_vod_categories`,
-    //get_vod_streams: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_vod_streams`,
-    get_vod_info: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_vod_info&vod_id=${vod_id}`,
-    //get_series_categories: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_series_categories`,
-    //get_series: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_series`,
-    get_series_info: `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_series_info&series_id=${series_id}`,
-  };
-
-  if (endpoints[action]) {
-    console.log(`Acessando o endpoint: ${endpoints[action]}`);
-    const data = await fetchFromIPTV(endpoints[action]);
-    return res.json(data);
-  }
-
   switch (action) {
-    case "get_live_streams":
+    case "get_vod_info": {
+      if (!vod_id) {
+        return res.status(400).json({ error: "Parâmetro vod_id é necessário" });
+      }
+      // Constrói a URL remota para VOD
+      const vodUrl = `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_vod_info&vod_id=${vod_id}`;
+      console.log(`Redirecionando para: ${vodUrl}`);
+      return res.redirect(vodUrl);
+    }
+    case "get_series_info": {
+      if (!series_id) {
+        return res.status(400).json({ error: "Parâmetro series_id é necessário" });
+      }
+      // Constrói a URL remota para Series
+      const seriesUrl = `${IPTVurl}/player_api.php?username=${IPTVuser}&password=${IPTVpass}&action=get_series_info&series_id=${series_id}`;
+      console.log(`Redirecionando para: ${seriesUrl}`);
+      return res.redirect(seriesUrl);
+    }
+    case "get_live_streams": {
       const live = loadJson("filtered_live_streams.json");
       return res.json(live);
-    case "get_vod_streams":
+    }
+    case "get_vod_streams": {
       const vod = loadJson("filtered_vod_streams.json");
       return res.json(vod);
-    case "get_series":
+    }
+    case "get_series": {
       const series = loadJson("filtered_series_streams.json");
       return res.json(series);
-    case "get_live_categories":
+    }
+    case "get_live_categories": {
       const liveCategories = loadJson("filtered_live_categories.json");
       return res.json(liveCategories);
-    case "get_vod_categories":
+    }
+    case "get_vod_categories": {
       const vodCategories = loadJson("filtered_vod_categories.json");
       return res.json(vodCategories);
-    case "get_series_categories":
+    }
+    case "get_series_categories": {
       const seriesCategories = loadJson("filtered_series_categories.json");
       return res.json(seriesCategories);
+    }
     default:
       return res.status(400).json({ error: "Ação inválida" });
   }
-
 });
 
-// Endpoints de redirecionamento
+// Endpoints de redirecionamento para streams
 app.get("/movie/user/pass/:id", async (req, res) => {
   const { id } = req.params;
   let streamUrl = `${IPTVurl}/movie/${IPTVuser}/${IPTVpass}/${id}.mp4`;
